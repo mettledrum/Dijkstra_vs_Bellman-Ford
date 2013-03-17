@@ -1,0 +1,199 @@
+//
+
+#include "Matrix.h"
+
+
+template <typename T>
+Matrix<T> Matrix<T>::operator*(const Matrix<T>& m) const
+{
+    //make sure the dimensions are correct
+    assert(m.row==this->col);
+
+    //this will hold the values multiplied
+    Matrix<T> tempM(this->row,m.col);
+
+    for(int i=0; i<this->row; ++i)
+    {
+        for(int j=0; j<m.row; ++j)
+        {
+            for(int k=0; k<m.col; ++k)
+            {
+                tempM[i][k]+=this->theMatrix[i][j]*m.theMatrix[j][k];
+            }
+        }
+    }
+    //should I return *this = tempM?
+    //does that mess stuff up?
+    return tempM;
+}
+
+//!= must be overloaded for T
+template <typename T>
+bool Matrix<T>::operator ==(const Matrix<T>& m) const
+{
+    //checks the sizing first
+    if(row!=m.row || col!=m.col)
+        return false;
+
+    //checks equality of elements in matrices
+    for(int i=0; i<row; ++i)
+        {
+            for(int j=0; j<col; ++j)
+            {
+                if(theMatrix[i][j]!=m.theMatrix[i][j])
+                    return false;
+            }
+        }
+
+    return true;
+}
+
+//DON'T DOUBLE ASSIGN!!!
+template <typename T>
+Matrix<T>& Matrix<T>::operator=(const Matrix<T>& m)
+{
+    if (&m==this)
+        return *this;
+
+    //if the dimensions are different, we must
+    // release dynamic mem and rebuild
+    if((m.row!=row) || (m.col!=col))
+    {
+        //release dynamic mem
+        this->~Matrix();
+
+        //rebuild the Matrix with new dimensions
+        row=m.row;
+        col=m.col;
+
+        //rows
+        this->theMatrix = new T*[row*sizeof(T*)];
+
+        //columns
+        for(int i=0; i<row; ++i)
+            this->theMatrix[i] = new T[col*sizeof(T)];
+
+        //populates with MAXs, T has to accept MAXs
+        //this should be specialized for other Ts
+        for(int i=0; i<row; ++i)
+        {
+            for(int j=0; j<col; ++j)
+            {
+                this->theMatrix[i][j]=std::numeric_limits<T>::max();
+            }
+        }
+    }
+
+    //takes new values from m
+    for(int i=0; i<row; ++i)
+    {
+        for(int j=0; j<col; ++j)
+        {
+            this->theMatrix[i][j]=m.getMatrix()[i][j];
+        }
+    }
+
+    return *this;
+}
+
+
+//gets the values from input file starting at line 4
+// to write 1s where there's an edge
+template <typename T>
+void Matrix<T>::getEdgesFromFile(std::ifstream& inny)
+{
+    //holds temporary values for putting into
+    // adjacency matrix
+    std::string tempLine;
+    T tempRow, tempCol, tempWeight;
+    size_t lineCount = 1;
+
+    while(getline(inny,tempLine))
+    {
+        std::istringstream lineStream(tempLine);
+
+        //this part only cares about the edges, that
+        // info starts on line 4 and goes to the end
+        while ((lineStream >> tempRow >> tempCol >> tempWeight) && (lineCount > 1) )
+        {
+            //put the values into the correct adjacency matrix location
+            theMatrix[tempRow-1][tempCol-1]=tempWeight;
+            
+            //this line makes it UNdirected:
+//            theMatrix[tempCol-1][tempRow-1]=tempWeight;
+        }
+        lineCount++;
+    }
+}
+
+template <typename T>
+Matrix<T>::~Matrix()
+{
+    for( int i = 0 ; i < row ; i++ )
+        delete [] theMatrix[i];
+
+    delete [] theMatrix;
+
+    row=col=0;
+}
+
+//makes rXc grid of type T, populates with zeros
+template <typename T>
+Matrix<T>::Matrix(unsigned int r, unsigned int c)
+{
+    row=r;
+    col=c;
+
+    //rows
+    theMatrix = new T*[row*sizeof(T*)];
+
+    //columns
+    for(int i=0; i<row; ++i)
+        theMatrix[i] = new T[col*sizeof(T)];
+
+    //populates with 0s, T has to accept 0s
+    //this should be specialized for other Ts
+    for(int i=0; i<row; ++i)
+    {
+        for(int j=0; j<col; ++j)
+        {
+            theMatrix[i][j]=std::numeric_limits<T>::max();
+        }
+    }
+}
+
+//DON'T type friend before the function in the implementation!!!
+template <typename U>
+std::ostream& operator << (std::ostream& out, const Matrix<U>& m)
+{
+    //spacing constant
+    const size_t WIDTH = 5;
+    char inf = 236;
+
+    //the empty space
+    std::cout << std::left << std::setw(WIDTH) << " ";
+
+    //column labels
+    for(int i=0; i<m.getColSize(); ++i)
+        out << std::left << std::setw(WIDTH) << i+1;
+    std::cout << std::endl;
+
+    //outputting the Matrix
+    for(int i=0; i<m.getRowSize(); ++i)
+    {
+        //row labels
+        out << std::left << std::setw(WIDTH) << i+1;
+
+        for(int j=0; j<m.getColSize(); ++j)
+        {
+            if(m.getMatrix()[i][j]==std::numeric_limits<U>::max())
+                out << std::left << std::setw(WIDTH) << inf;
+            else
+                out << std::left << std::setw(WIDTH) << m.getMatrix()[i][j];
+
+        }
+        out << std::endl;
+    }
+    return out;
+}
+
