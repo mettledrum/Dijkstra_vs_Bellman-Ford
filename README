@@ -13,9 +13,8 @@ Descriptions of one of the test input files that make the graphs:
 
 There are other graphs to test data on already in each algorithm folder, and any graph can be made on a blank file following the layout of:
 
-	`#_of_vertices_in_graph
-	start_node# end_node# weight_val
-	…(continue line ii till you’re done with edges)`
+	#_of_vertices_in_graph start_node# end_node# weight_val
+	…(continue line ii till you’re done with edges)
 	
 results, runtimes
 -----------------
